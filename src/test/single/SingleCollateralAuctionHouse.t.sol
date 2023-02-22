@@ -1731,15 +1731,9 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
         collateralAuctionHouse.modifyParameters("minimumBid", 100 * WAD);
         collateralAuctionHouse.modifyParameters("perSecondDiscountUpdateRate", RAY - 100);
         collateralAuctionHouse.modifyParameters("maxDiscountUpdateRateTimeline", uint256(uint48(-1)) - now - 1);
-        collateralAuctionHouse.modifyParameters("lowerCollateralMedianDeviation", 0.95E18);
-        collateralAuctionHouse.modifyParameters("upperCollateralMedianDeviation", 0.90E18);
-        collateralAuctionHouse.modifyParameters("lowerSystemCoinMedianDeviation", 0.95E18);
-        collateralAuctionHouse.modifyParameters("upperSystemCoinMedianDeviation", 0.90E18);
 
         assertEq(collateralAuctionHouse.minDiscount(), 0.91E18);
         assertEq(collateralAuctionHouse.maxDiscount(), 0.90E18);
-        assertEq(collateralAuctionHouse.lowerCollateralMedianDeviation(), 0.95E18);
-        assertEq(collateralAuctionHouse.upperCollateralMedianDeviation(), 0.90E18);
         assertEq(collateralAuctionHouse.perSecondDiscountUpdateRate(), RAY - 100);
         assertEq(collateralAuctionHouse.maxDiscountUpdateRateTimeline(), uint256(uint48(-1)) - now - 1);
         assertEq(collateralAuctionHouse.minimumBid(), 100 * WAD);
