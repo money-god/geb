@@ -27,7 +27,7 @@ import {LiquidationEngine} from '../../single/LiquidationEngine.sol';
 import {AccountingEngine} from '../../single/AccountingEngine.sol';
 import {CoinSavingsAccount} from '../../single/CoinSavingsAccount.sol';
 import {StabilityFeeTreasury} from '../../single/StabilityFeeTreasury.sol';
-import {EnglishCollateralAuctionHouse, FixedDiscountCollateralAuctionHouse} from '../../single/CollateralAuctionHouse.sol';
+import {EnglishCollateralAuctionHouse, IncreasingDiscountCollateralAuctionHouse} from '../../single/CollateralAuctionHouse.sol';
 import {BurningSurplusAuctionHouse} from '../../single/SurplusAuctionHouse.sol';
 import {DebtAuctionHouse} from '../../single/DebtAuctionHouse.sol';
 import {SettlementSurplusAuctioneer} from "../../single/SettlementSurplusAuctioneer.sol";
@@ -141,7 +141,7 @@ contract SingleGlobalSettlementTest is DSTest {
         DSDelegateToken collateral;
         BasicCollateralJoin collateralA;
         EnglishCollateralAuctionHouse englishCollateralAuctionHouse;
-        FixedDiscountCollateralAuctionHouse fixedDiscountCollateralAuctionHouse;
+        IncreasingDiscountCollateralAuctionHouse increasingDiscountCollateralAuctionHouse;
     }
 
     mapping (bytes32 => CollateralType) collateralTypes;
@@ -225,17 +225,18 @@ contract SingleGlobalSettlementTest is DSTest {
         englishCollateralAuctionHouse.addAuthorization(address(globalSettlement));
         englishCollateralAuctionHouse.addAuthorization(address(liquidationEngine));
 
-        FixedDiscountCollateralAuctionHouse fixedDiscountCollateralAuctionHouse =
-          new FixedDiscountCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), encodedName);
-        fixedDiscountCollateralAuctionHouse.modifyParameters("oracleRelayer", address(oracleRelayer));
-        fixedDiscountCollateralAuctionHouse.modifyParameters("collateralFSM", address(new Feed(bytes32(uint256(200 ether)), true)));
-        safeEngine.approveSAFEModification(address(fixedDiscountCollateralAuctionHouse));
-        fixedDiscountCollateralAuctionHouse.addAuthorization(address(globalSettlement));
-        fixedDiscountCollateralAuctionHouse.addAuthorization(address(liquidationEngine));
+        IncreasingDiscountCollateralAuctionHouse increasingDiscountCollateralAuctionHouse =
+          new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), encodedName);
+        increasingDiscountCollateralAuctionHouse.modifyParameters("oracleRelayer", address(oracleRelayer));
+        increasingDiscountCollateralAuctionHouse.modifyParameters("collateralFSM", address(new Feed(bytes32(uint256(200 ether)), true)));
+        increasingDiscountCollateralAuctionHouse.modifyParameters("minDiscount", 0.95E18);
+        safeEngine.approveSAFEModification(address(increasingDiscountCollateralAuctionHouse));
+        increasingDiscountCollateralAuctionHouse.addAuthorization(address(globalSettlement));
+        increasingDiscountCollateralAuctionHouse.addAuthorization(address(liquidationEngine));
 
         // Start with English auction house
         liquidationEngine.addAuthorization(address(englishCollateralAuctionHouse));
-        liquidationEngine.addAuthorization(address(fixedDiscountCollateralAuctionHouse));
+        liquidationEngine.addAuthorization(address(increasingDiscountCollateralAuctionHouse));
 
         liquidationEngine.modifyParameters(encodedName, "collateralAuctionHouse", address(englishCollateralAuctionHouse));
         liquidationEngine.modifyParameters(encodedName, "liquidationPenalty", 1 ether);
@@ -245,7 +246,7 @@ contract SingleGlobalSettlementTest is DSTest {
         collateralTypes[encodedName].collateral = newCollateral;
         collateralTypes[encodedName].collateralA = collateralA;
         collateralTypes[encodedName].englishCollateralAuctionHouse = englishCollateralAuctionHouse;
-        collateralTypes[encodedName].fixedDiscountCollateralAuctionHouse = fixedDiscountCollateralAuctionHouse;
+        collateralTypes[encodedName].increasingDiscountCollateralAuctionHouse = increasingDiscountCollateralAuctionHouse;
 
         return collateralTypes[encodedName];
     }
@@ -582,10 +583,21 @@ contract SingleGlobalSettlementTest is DSTest {
         assertEq(balanceOf("gold", address(gold.collateralA)), 0);
     }
 
-    function test_shutdown_fast_track_fixed_discount_auction() public {
+    function test_shutdown_fast_track_increasing_discount_auction() public {
+        /*
+          Error: a == b not satisfied [uint]
+            Expected: 7973684210526315790
+            Actual: 7975000000000000000
+          Error: a == b not satisfied [uint]
+            Expected: 7973684210526315790
+            Actual: 7975000000000000000
+          Error: a == b not satisfied [uint]
+            Expected: 2000000000000000000
+            Actual: 2001315789473684210
+        */ 
         CollateralType memory gold = init_collateral("gold", "gold");
         // swap auction house in the liquidation engine
-        liquidationEngine.modifyParameters("gold", "collateralAuctionHouse", address(gold.fixedDiscountCollateralAuctionHouse));
+        liquidationEngine.modifyParameters("gold", "collateralAuctionHouse", address(gold.increasingDiscountCollateralAuctionHouse));
 
         Usr ali = new Usr(safeEngine, globalSettlement);
 
@@ -601,8 +613,8 @@ contract SingleGlobalSettlementTest is DSTest {
         assertEq(safeEngine.globalUnbackedDebt(), rad(15 ether));      // now there is bad debt
         // get 5 coins from ali
         ali.transferInternalCoins(address(ali), address(this), rad(5 ether));
-        safeEngine.approveSAFEModification(address(gold.fixedDiscountCollateralAuctionHouse));
-        gold.fixedDiscountCollateralAuctionHouse.buyCollateral(auction, 5 ether);
+        safeEngine.approveSAFEModification(address(gold.increasingDiscountCollateralAuctionHouse));
+        gold.increasingDiscountCollateralAuctionHouse.buyCollateral(auction, 5 ether);
 
         assertEq(coinBalance(safe1), 10 ether);
 
