@@ -584,17 +584,6 @@ contract SingleGlobalSettlementTest is DSTest {
     }
 
     function test_shutdown_fast_track_increasing_discount_auction() public {
-        /*
-          Error: a == b not satisfied [uint]
-            Expected: 7973684210526315790
-            Actual: 7975000000000000000
-          Error: a == b not satisfied [uint]
-            Expected: 7973684210526315790
-            Actual: 7975000000000000000
-          Error: a == b not satisfied [uint]
-            Expected: 2000000000000000000
-            Actual: 2001315789473684210
-        */ 
         CollateralType memory gold = init_collateral("gold", "gold");
         // swap auction house in the liquidation engine
         liquidationEngine.modifyParameters("gold", "collateralAuctionHouse", address(gold.increasingDiscountCollateralAuctionHouse));

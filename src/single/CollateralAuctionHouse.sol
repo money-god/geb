@@ -952,7 +952,6 @@ contract FixedDiscountCollateralAuctionHouse {
     }
 }
 
-
 /// IncreasingDiscountCollateralAuctionHouse.sol
 
 // Copyright (C) 2018 Rain <rainbreak@riseup.net>, 2020 Reflexer Labs, INC
@@ -973,6 +972,7 @@ contract FixedDiscountCollateralAuctionHouse {
 /*
    This thing lets you sell some collateral at an increasing discount in order to instantly recapitalize the system
 */
+
 contract IncreasingDiscountCollateralAuctionHouse {
     // --- Auth ---
     mapping (address => uint256) public authorizedAccounts;
