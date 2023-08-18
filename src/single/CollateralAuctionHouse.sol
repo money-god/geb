@@ -1416,7 +1416,7 @@ contract IncreasingDiscountCollateralAuctionHouse {
     * @returns The upcoming discount that will be used in the targeted auction
     */
     function getNextCurrentDiscount(uint256 id) public view returns (uint256) {
-        if (bids[id].forgoneCollateralReceiver == address(0)) return RAY;
+        if (bids[id].forgoneCollateralReceiver == address(0)) return WAD;
         uint256 nextDiscount = bids[id].currentDiscount;
 
         // If the increase deadline hasn't been passed yet and the current discount is not at or greater than max
