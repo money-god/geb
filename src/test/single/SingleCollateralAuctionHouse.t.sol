@@ -3157,14 +3157,14 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
             uint256 _newAdjustedBid
         ) = collateralAuctionHouse.getCollateralBought(id, 120 * WAD);
 
-        // NOTE: this tx could try to be the 1st one, but get frontrunned and end up overbidding
+        // // NOTE: this tx could try to be the 1st one, but get frontrunned and end up overbidding
         Guy(ali).buyCollateral_increasingDiscount(id, 120 * WAD);
-        // /**
-        //  * - the new adjusted bid should be adjusted to the collateral left to sell
-        //  * - in the example, there are 0.1 collateral left to sell (at $200)
-        //  * - the adjusted bid should be 0.1 * 200 = 20 system coins
-        //  * - the auction should be settled with 100 system coins left to raise
-        //  */
+        // // /**
+        // //  * - the new adjusted bid should be adjusted to the collateral left to sell
+        // //  * - in the example, there are 0.1 collateral left to sell (at $200)
+        // //  * - the adjusted bid should be 0.1 * 200 = 20 system coins
+        // //  * - the auction should be settled with 100 system coins left to raise
+        // //  */
 
         (amountToSell, amountToRaise, , , , , , , ) = collateralAuctionHouse
             .bids(id);
@@ -3577,7 +3577,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
         });
     }
 
-    function test_buyCollateral_small_market_price() public {
+    function test_buyCollateral_small_market_price2() public {
         collateralFSM.set_val(0.01 ether);
         oracleRelayer.modifyParameters("redemptionPrice", 2 * RAY);
         (uint256 colMedianPrice, bool colMedianValidity) = collateralMedian
@@ -3624,7 +3624,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
 
         assertTrue(canBidThisAmount);
         assertEq(adjustedBid, 5 * WAD);
-        assertEq(safeEngine.coinBalance(auctionIncomeRecipient), 5 * RAD);
+        assertEq(safeEngine.coinBalance(auctionIncomeRecipient), 5 * RAD / 1000); // capped by collateral amount
         assertEq(
             safeEngine.tokenCollateral(
                 "collateralType",
@@ -3681,7 +3681,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
         assertEq(amountToSell, 0);
         assertEq(amountToRaise, 0);
 
-        assertEq(safeEngine.coinBalance(auctionIncomeRecipient), 50 * RAD);
+        assertEq(safeEngine.coinBalance(auctionIncomeRecipient), 20 * RAD); // capped by amount of collateral.
         assertEq(
             safeEngine.tokenCollateral(
                 "collateralType",

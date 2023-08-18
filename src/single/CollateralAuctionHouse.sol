@@ -1247,7 +1247,7 @@ contract IncreasingDiscountCollateralAuctionHouse {
         uint256 systemCoinPriceFeedValue,
         uint256 adjustedBid,
         uint256 customDiscount
-    ) private view returns (uint256) {
+    ) private view returns (uint256, uint256) {
         // calculate the collateral price in relation to the latest system coin price and apply the discount
         uint256 discountedCollateralPrice =
           getDiscountedCollateralPrice(
@@ -1259,9 +1259,15 @@ contract IncreasingDiscountCollateralAuctionHouse {
         // calculate the amount of collateral bought
         uint256 boughtCollateral = wdivide(adjustedBid, discountedCollateralPrice);
         // if the calculated collateral amount exceeds the amount still up for sale, adjust it to the remaining amount
-        boughtCollateral = (boughtCollateral > bids[id].amountToSell) ? bids[id].amountToSell : boughtCollateral;
+        // boughtCollateral = (boughtCollateral > bids[id].amountToSell) ? bids[id].amountToSell : boughtCollateral;
 
-        return boughtCollateral;
+        if (boughtCollateral <=  bids[id].amountToSell) {
+            return (boughtCollateral, adjustedBid);
+        } else {
+            return (bids[id].amountToSell, multiply(adjustedBid,  bids[id].amountToSell) / boughtCollateral);
+        }
+
+        // return boughtCollateral; // todo: WIP, clean up!
     }
     /*
     * @notice Update the discount used in a particular auction
@@ -1544,7 +1550,7 @@ contract IncreasingDiscountCollateralAuctionHouse {
           systemCoinPriceFeedValue,
           adjustedBid,
           bids[id].currentDiscount
-        ), adjustedBid);
+        ));
     }
     /**
      * @notice Calculate how much collateral someone would buy from an auction using the latest redemption price fetched from the
@@ -1571,7 +1577,7 @@ contract IncreasingDiscountCollateralAuctionHouse {
           systemCoinPriceFeedValue,
           adjustedBid,
           updateCurrentDiscount(id)
-        ), adjustedBid);
+        ));
     }
     /**
      * @notice Buy collateral from an auction at an increasing discount
@@ -1593,7 +1599,8 @@ contract IncreasingDiscountCollateralAuctionHouse {
         require(collateralFsmPriceFeedValue > 0, "IncreasingDiscountCollateralAuctionHouse/collateral-fsm-invalid-value");
 
         // get the amount of collateral bought
-        uint256 boughtCollateral = getBoughtCollateral(
+        uint256 boughtCollateral;
+        (boughtCollateral, adjustedBid) = getBoughtCollateral(
             id, collateralFsmPriceFeedValue, getCollateralMedianPrice(), systemCoinPriceFeedValue, adjustedBid, updateCurrentDiscount(id)
         );
         // check that the calculated amount is greater than zero
